@@ -1,3 +1,3 @@
-# funf
+## funf [![Build Status](https://travis-ci.org/cristaloleg/funf.svg?branch=master)](https://travis-ci.org/cristaloleg/funf)
 
-Go playground, Small snippets, experiments, fun.
+Go playground, small snippets, experiments, fun.
