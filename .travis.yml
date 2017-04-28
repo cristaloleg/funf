@@ -18,3 +18,9 @@ before_install:
 script:
   - golint ./...
   - go vet ./...
+  - go test -v ./...
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
