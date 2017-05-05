@@ -8,8 +8,12 @@ type Multierr struct {
 }
 
 // NewMultierr creates a new pointer to Multierr
-func NewMultierr() *Multierr {
-	return &Multierr{}
+func NewMultierr(errs ...error) *Multierr {
+	m := Multierr{}
+
+	m.errors = append(m.errors, errs...)
+
+	return &m
 }
 
 // Add adds error to the collection of errors

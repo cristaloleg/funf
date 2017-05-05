@@ -33,4 +33,10 @@ func TestNewMultierr(t *testing.T) {
 	if res != expected {
 		t.Errorf("incorrect error value, expected \n`%v` got \n`%v`", expected, res)
 	}
+
+	multerr = NewMultierr(errors.New("first error"), errors.New("second error"))
+
+	if multerr.Len() != 2 {
+		t.Errorf("incorrect number of errors, expected %v got %v", 2, multerr.Len())
+	}
 }
