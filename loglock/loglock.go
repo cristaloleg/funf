@@ -38,7 +38,7 @@ func (ll *LogLock) Lock() {
 // Unlock unlocks for read/write
 func (ll *LogLock) Unlock() {
 	ll.mutex.Unlock()
-	ll.lastUnlock++
+	ll.unlocked++
 	ll.lastLock = time.Now()
 	if ll.onUnlock != nil {
 		ll.onUnlock()
