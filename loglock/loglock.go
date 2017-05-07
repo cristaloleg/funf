@@ -2,11 +2,22 @@ package loglock
 
 import (
 	"sync"
+	"time"
 )
 
 // LogLock is a logged lock
 type LogLock struct {
 	mutex sync.RWMutex
+
+	locked    int64
+	unlocked  int64
+	rlocked   int64
+	runlocked int64
+
+	lastLock    time.Time
+	lastUnlock  time.Time
+	lastRLock   time.Time
+	lastRUnlock time.Time
 
 	onLock    func()
 	onUnlock  func()
@@ -17,6 +28,8 @@ type LogLock struct {
 // Lock locks for read/write
 func (ll *LogLock) Lock() {
 	ll.mutex.Lock()
+	ll.locked++
+	ll.lastLock = time.Now()
 	if ll.onLock != nil {
 		ll.onLock()
 	}
@@ -25,6 +38,8 @@ func (ll *LogLock) Lock() {
 // Unlock unlocks for read/write
 func (ll *LogLock) Unlock() {
 	ll.mutex.Unlock()
+	ll.lastUnlock++
+	ll.lastLock = time.Now()
 	if ll.onUnlock != nil {
 		ll.onUnlock()
 	}
@@ -33,6 +48,8 @@ func (ll *LogLock) Unlock() {
 // RLock locks for reading
 func (ll *LogLock) RLock() {
 	ll.mutex.RLock()
+	ll.rlocked++
+	ll.lastRLock = time.Now()
 	if ll.onRLock != nil {
 		ll.onRLock()
 	}
@@ -41,6 +58,8 @@ func (ll *LogLock) RLock() {
 // RUnlock unlocks reading
 func (ll *LogLock) RUnlock() {
 	ll.mutex.RUnlock()
+	ll.runlocked++
+	ll.lastRUnlock = time.Now()
 	if ll.onRUnlock != nil {
 		ll.onRUnlock()
 	}
@@ -64,4 +83,14 @@ func (ll *LogLock) OnRLock(f func()) {
 // OnRUnlock executes on read unlocking
 func (ll *LogLock) OnRUnlock(f func()) {
 	ll.onRUnlock = f
+}
+
+// Counters returrns counters for lock toggles
+func (ll *LogLock) Counters() (lock, unlock, rlock, runlock int64) {
+	return ll.locked, ll.unlocked, ll.rlocked, ll.runlocked
+}
+
+// LastToggles returrns last lock toggles
+func (ll *LogLock) LastToggles() (lock, unlock, rlock, runlock time.Time) {
+	return ll.lastLock, ll.lastUnlock, ll.lastRLock, ll.lastRUnlock
 }
