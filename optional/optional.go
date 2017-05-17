@@ -5,6 +5,7 @@ type Optional interface {
 	Apply(func(interface{}) Optional) Optional
 	HasValue() bool
 	Or(interface{}) interface{}
+	Get() interface{}
 }
 
 // Wrap returns a value wrapped to monad
@@ -35,6 +36,11 @@ func (n *None) Or(value interface{}) interface{} {
 	return value
 }
 
+// Get for None always return a nil
+func (n *None) Get() interface{} {
+	return nil
+}
+
 // Apply executes f on monad value
 func (j *Just) Apply(f func(interface{}) Optional) Optional {
 	return f(j.value)
@@ -47,8 +53,13 @@ func (j *Just) HasValue() bool {
 
 // Or returns a param if monad value is nil
 func (j *Just) Or(value interface{}) interface{} {
-	if j.value == nil {
-		return value
+	if j.HasValue() {
+		return j.value
 	}
+	return value
+}
+
+// Get for Just return a value
+func (j *Just) Get() interface{} {
 	return j.value
 }

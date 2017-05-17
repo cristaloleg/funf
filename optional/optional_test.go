@@ -14,7 +14,7 @@ func TestOptional(t *testing.T) {
 	}
 	o := Wrap(1)
 
-	if !o.HasValue() {
+	if !o.HasValue() || o.Get() == nil {
 		t.Error("must have value")
 	}
 
@@ -23,7 +23,7 @@ func TestOptional(t *testing.T) {
 	}
 
 	o = g(2)
-	if o.HasValue() {
+	if o.HasValue() || o.Get() != nil {
 		t.Error("must not have value")
 	}
 
