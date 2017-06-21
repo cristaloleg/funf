@@ -1,6 +1,9 @@
 .PHONY: all build bench test fmt race cpuprof memprof 
 
-TIMESTAMP=$(shell date +"%Y-%m-%d_%H-%M-%S")
+TIMESTAMP := $(shell date +"%Y-%m-%d_%H-%M-%S")
+VERSION := $(shell sh -c 'git describe --always --tags')
+BRANCH := $(shell sh -c 'git rev-parse --abbrev-ref HEAD')
+COMMIT := $(shell sh -c 'git rev-parse --short HEAD')
 
 all: install build test
 
