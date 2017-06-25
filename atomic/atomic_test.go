@@ -3,11 +3,11 @@ package atomic_test
 import (
 	"testing"
 
-	"github.com/cristaloleg/funf/atomic"
+	. "github.com/cristaloleg/funf/atomic"
 )
 
 func TestAtomic(t *testing.T) {
-	a := atomic.New(fn)
+	a := New(fn)
 	if a == nil {
 		t.Error("cannot instantiate")
 	}
@@ -24,7 +24,7 @@ func TestAtomic(t *testing.T) {
 }
 
 func TestAtomic_Min(t *testing.T) {
-	a := atomic.NewMin()
+	a := NewMin()
 	if a == nil {
 		t.Error("cannot instantiate")
 	}
@@ -50,7 +50,7 @@ func TestAtomic_Min(t *testing.T) {
 }
 
 func TestAtomic_Max(t *testing.T) {
-	a := atomic.NewMax()
+	a := NewMax()
 	if a == nil {
 		t.Error("cannot instantiate")
 	}
