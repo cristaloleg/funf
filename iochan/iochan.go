@@ -13,15 +13,13 @@ const (
 	Size
 )
 
-func NewReader(r io.Reader, m Mode, arg interface{}) <-chan string {
+// ReaderDelimiter reads from io.Reader till delimiter, send readed bytes to channel
+// works while io.Reader
+func ReaderDelimiter(r io.Reader, delimiter byte) <-chan string {
 	ch := make(chan string)
 
-	delim := func() {
+	go func() {
 		buf := bufio.NewReader(r)
-		delimiter, ok := arg.(byte)
-		if !ok {
-			return
-		}
 
 		for {
 			line, err := buf.ReadString(delimiter)
@@ -33,29 +31,17 @@ func NewReader(r io.Reader, m Mode, arg interface{}) <-chan string {
 		}
 
 		close(ch)
-	}
+	}()
 
-	timer := func() {
+	return ch
+}
+
+// ReaderSize reads from io.Reader upto size, send readed bytes to channel
+func ReaderSize(r io.Reader, size int) <-chan string {
+	ch := make(chan string)
+
+	go func() {
 		buf := bufio.NewReader(r)
-
-		for {
-			line, err := buf.ReadString(byte(13))
-			if err != nil {
-				break
-			}
-
-			ch <- line
-		}
-
-		close(ch)
-	}
-
-	sized := func() {
-		buf := bufio.NewReader(r)
-		size, ok := arg.(int)
-		if !ok {
-			return
-		}
 
 		for {
 			line := make([]byte, size)
@@ -67,18 +53,7 @@ func NewReader(r io.Reader, m Mode, arg interface{}) <-chan string {
 		}
 
 		close(ch)
-	}
-
-	switch m {
-	case Delimiter:
-		go delim()
-
-	case Timer:
-		go timer()
-
-	case Size:
-		go sized()
-	}
+	}()
 
 	return ch
 }
