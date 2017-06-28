@@ -2,20 +2,14 @@ package iochan
 
 import (
 	"bufio"
+	"bytes"
 	"io"
+	"time"
 )
 
-type Mode int
-
-const (
-	Delimiter Mode = iota
-	Timer
-	Size
-)
-
-// ReaderDelimiter reads from io.Reader till delimiter, send readed bytes to channel
+// DelimReader reads from io.Reader till delimiter, send readed bytes to channel
 // works while io.Reader
-func ReaderDelimiter(r io.Reader, delimiter byte) <-chan string {
+func DelimReader(r io.Reader, delimiter byte) <-chan string {
 	ch := make(chan string)
 
 	go func() {
@@ -36,8 +30,8 @@ func ReaderDelimiter(r io.Reader, delimiter byte) <-chan string {
 	return ch
 }
 
-// ReaderSize reads from io.Reader upto size, send readed bytes to channel
-func ReaderSize(r io.Reader, size int) <-chan string {
+// SizeReader reads from io.Reader upto size, send readed bytes to channel
+func SizeReader(r io.Reader, size int) <-chan string {
 	ch := make(chan string)
 
 	go func() {
@@ -56,4 +50,39 @@ func ReaderSize(r io.Reader, size int) <-chan string {
 	}()
 
 	return ch
+}
+
+// TimedWrite reads from chan and writes to w when timer expires
+func TimedWrite(ch <-chan string, timer time.Duration, w io.Writer) {
+	go func() {
+		var buf bytes.Buffer
+
+		for {
+			select {
+			case data := <-ch:
+				buf.WriteString(data)
+
+			case <-time.After(timer):
+				w.Write(buf.Bytes())
+				buf.Reset()
+			}
+		}
+	}()
+}
+
+// SizedWrite reads from chan and writes to w when data exceeds size bytes
+func SizedWrite(ch <-chan string, size int, w io.Writer) {
+	go func() {
+		var buf bytes.Buffer
+
+		for {
+			data := <-ch
+			buf.WriteString(data)
+
+			if buf.Len() >= size {
+				w.Write(buf.Bytes())
+				buf.Reset()
+			}
+		}
+	}()
 }
