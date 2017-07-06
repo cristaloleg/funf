@@ -3,44 +3,49 @@ package lechan
 import (
 	"time"
 
-	"go.uber.org/atomic"
+	"sync/atomic"
 )
 
-type Channel interface {
-	Put(interface{})
-	TryPut(interface{}) bool
-	TryTimedPut(interface{}, time.Duration) bool
-	TryCountedPut(interface{}, time.Duration, int) bool
-	TryFallbackPut(interface{}, func(interface{})) bool
-	Get() (interface{}, bool)
-}
-
 type Lechan struct {
-	size  uint32
-	items atomic.Uint32
-	queue chan interface{}
+	size   int32
+	items  int32
+	queue  chan interface{}
+	input  chan interface{}
+	output chan interface{}
+	close  chan struct{}
 }
 
-func New(size uint32) *Lechan {
+func New(size int) *Lechan {
 	ch := &Lechan{
-		size:  size,
+		size:  int32(size),
 		queue: make(chan interface{}, size),
+		close: make(chan struct{}, 1),
 	}
+	go ch.run()
 	return ch
 }
 
 func (ch *Lechan) Put(value interface{}) {
 	ch.queue <- value
-	ch.items.Inc()
+	atomic.AddInt32(&ch.items, 1)
 }
 
 func (ch *Lechan) TryPut(value interface{}) bool {
-	if ch.items.Load() == ch.size {
+	if atomic.LoadInt32(&ch.items) == ch.size {
 		return false
 	}
 	ch.queue <- value
-	ch.items.Inc()
+	atomic.AddInt32(&ch.items, 1)
 	return true
+}
+
+func (ch *Lechan) TryCountedPut(value interface{}, count int) bool {
+	for i := 0; i < count; i++ {
+		if ch.TryPut(value) {
+			return true
+		}
+	}
+	return false
 }
 
 func (ch *Lechan) TryTimedPut(value interface{}, duration time.Duration) bool {
@@ -56,27 +61,61 @@ func (ch *Lechan) TryTimedPut(value interface{}, duration time.Duration) bool {
 	}
 }
 
-func (ch *Lechan) TryCountedPut(value interface{}, pause time.Duration, count int) bool {
+func (ch *Lechan) TryLimitedPut(value interface{}, count int, delay time.Duration) bool {
 	for i := 0; i < count; i++ {
-		if ch.TryPut(value) {
+		if ch.TryTimedPut(value, delay) {
 			return true
 		}
 	}
 	return false
 }
 
-func (ch *Lechan) TryFallbackPut(value interface{}, f func(interface{})) bool {
-	if ch.TryPut(value) {
-		return true
-	}
-	f(value)
-	return false
-}
-
 func (ch *Lechan) Get() (value interface{}, ok bool) {
-	if ch.items.Load() == 0 {
+	if atomic.LoadInt32(&ch.items) == 0 {
 		return nil, false
 	}
-	ch.items.Dec()
-	return <-ch.queue, true
+	value = <-ch.queue
+	atomic.AddInt32(&ch.items, -1)
+	return value, true
+}
+
+func (ch *Lechan) In() chan<- interface{} {
+	return ch.input
+}
+
+func (ch *Lechan) Out() <-chan interface{} {
+	return ch.output
+}
+
+func (ch *Lechan) Close() {
+	ch.close <- struct{}{}
+}
+
+func (ch *Lechan) run() {
+	var next interface{}
+
+	for {
+		select {
+		case ch.output <- next:
+
+		default:
+			select {
+			default:
+				tmp, ok := ch.Get()
+				if ok {
+					next = tmp
+				}
+
+			case value := <-ch.input:
+				ch.TryPut(value)
+
+			case <-ch.close:
+				close(ch.input)
+				close(ch.output)
+				close(ch.queue)
+				close(ch.close)
+				return
+			}
+		}
+	}
 }
