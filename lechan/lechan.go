@@ -100,21 +100,21 @@ func (ch *Lechan) run() {
 
 		default:
 			select {
+			case next = <-ch.queue:
+				atomic.AddInt32(&ch.items, -1)
+
 			default:
-				tmp, ok := ch.Get()
-				if ok {
-					next = tmp
+				select {
+				case value := <-ch.input:
+					ch.TryPut(value)
+
+				case <-ch.close:
+					close(ch.input)
+					close(ch.output)
+					close(ch.queue)
+					close(ch.close)
+					return
 				}
-
-			case value := <-ch.input:
-				ch.TryPut(value)
-
-			case <-ch.close:
-				close(ch.input)
-				close(ch.output)
-				close(ch.queue)
-				close(ch.close)
-				return
 			}
 		}
 	}
