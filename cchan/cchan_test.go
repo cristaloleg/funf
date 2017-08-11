@@ -1,9 +1,7 @@
 package cchan
 
 import (
-	"fmt"
 	"math"
-	"reflect"
 	"testing"
 )
 
@@ -27,10 +25,7 @@ func TestConvert(t *testing.T) {
 
 	ch, ok := tmp.Interface().(chan float32)
 	if !ok {
-		fmt.Printf("%+v\n", reflect.ValueOf(tmp))
-		fmt.Printf("%#v\n", reflect.ValueOf(out))
 		t.Error("cannot convert")
-		t.Error(reflect.ValueOf(tmp))
 	}
 
 	if len(ch) != 0 {
