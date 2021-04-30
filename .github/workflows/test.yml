@@ -9,5 +9,5 @@ jobs:
       - name: Do
         run: |
           echo "Slug variables"
-          echo $${{ GITHUB_REF }}
-          echo http://${{ GITHUB_REF }}.app.facta.io
+          echo $${{ github.ref }}
+          echo http://${{ github.ref }}.lel
