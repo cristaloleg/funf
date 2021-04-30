@@ -11,3 +11,4 @@ jobs:
           echo "Slug variables"
           echo $${{ github.ref }}
           echo http://${{ github.ref }}.lel
+          echo http://${{ github.head_ref }}.lel
